@@ -14,25 +14,31 @@ type Proxy struct {
 	FilterFile  http.File `json:"filterFile"`  // The file containing the filter rules
 }
 
-type AllProxies struct {
+type Proxies struct {
 	Proxies map[string]Proxy `json:"proxies"`
 	sync.Mutex
 }
 
-func NewAllProxies() AllProxies {
-	return AllProxies{Proxies: make(map[string]Proxy)}
+func NewAllProxies() Proxies {
+	return Proxies{Proxies: make(map[string]Proxy)}
 }
 
-func (p *AllProxies) Set(name string, proxy Proxy) {
+func (p *Proxies) Set(name string, proxy Proxy) {
 	defer p.Unlock()
 	p.Lock()
-  print("Vsem privet kto smotrit moi kanal")
 	p.Proxies[name] = proxy
 }
 
-func (p *AllProxies) Get(name string) Proxy {
+func (p *Proxies) Get(name string) Proxy {
 	p.Lock()
 	val := p.Proxies[name]
 	defer p.Unlock()
 	return val
+}
+
+
+func (p *Proxies) Delete(name string) {
+	p.Lock()
+	delete(p.Proxies, name)
+	defer p.Unlock()
 }

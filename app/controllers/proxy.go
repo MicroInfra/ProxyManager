@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"github.com/gorilla/mux"
+  "strconv"
 	"main/models"
 	"net/http"
 )
 
 type Server struct {
-	Proxies models.AllProxies
+	Proxies models.Proxies
 }
 
 // GetAll Function to get all proxies
 func (s *Server) GetAll(response http.ResponseWriter, req *http.Request) {
-	log.Printf("handling get task at %s\n", req.URL.Path)
-
-	//proxy := models.Proxy{ServiceUrl: "http://httpd:8000", ListenPort: 8000, ProxyType: "http", FilterFile: nil}
+	log.Printf("GET %s\n", req.URL.Path)
 
 	jsonResponse, jsonError := json.Marshal(s.Proxies)
 
@@ -30,15 +30,15 @@ func (s *Server) GetAll(response http.ResponseWriter, req *http.Request) {
 }
 
 
-// Get Function to get a proxy by id
-func (s *Server) Get(response http.ResponseWriter, req *http.Request, int id) {
-	log.Printf("handling get task at %s\n", req.URL.Path)
+// Get Function to get a proxy by name
+func (s *Server) Get(response http.ResponseWriter, req *http.Request) {
+	log.Printf("GET %s\n", req.URL.Path)
+  vars := mux.Vars(req)
+  name := vars["name"]
 
-	proxy := models.Proxy{ServiceUrl: "http://httpd:8000", ListenPort: 8000, ProxyType: "http", FilterFile: nil}
- // Get proxy by id TODO
+  proxy := s.Proxies.Get(name)
 
 	jsonResponse, jsonError := json.Marshal(proxy)
-
 	if jsonError != nil {
 		fmt.Println("Unable to encode JSON")
 	}
@@ -49,19 +49,25 @@ func (s *Server) Get(response http.ResponseWriter, req *http.Request, int id) {
 }
 
 
-// Create Function to create a new proxy from a json request
-func (s *Server) Create(response http.ResponseWriter, req *http.Request) {
-	log.Printf("Creating a new proxy. URL %s\n", req.URL.Path)
+// Write function creates or updates a proxy from a json request
+func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
+  log.Printf("Write proxy URL: %s\n", req.URL.Path)
 
-	// Decode the request body into a proxy struct
-	decoder := json.NewDecoder(req.Body)
-	var proxy models.Proxy
-	err := decoder.Decode(&proxy)
-	if err != nil {
-		fmt.Println("Unable to decode JSON")
+  file, handler, err := req.FormFile("filterFile") // Get the file from the form data
+  if err != nil {
+      fmt.Println(err)
+      return
+  }
+  defer file.Close()
+
+  fmt.Println("File name: %v\n", handler.Filename) // Write the file name to the response
+  port, err := strconv.Atoi(req.FormValue("listenPort"))
+  if err != nil {
+    fmt.Println("port is not a number")
 		response.WriteHeader(http.StatusBadRequest)
 		return
-	}
+  }
+  proxy :=  models.Proxy{ServiceName: req.FormValue("serviceName"), ServiceUrl: req.FormValue("serviceUrl"), ListenPort: port , ProxyType: req.FormValue("proxyType"), FilterFile: nil}
 
 	// Add the proxy to the list of proxies
 	s.Proxies.Set(proxy.ServiceName, proxy)
@@ -78,3 +84,16 @@ func (s *Server) Create(response http.ResponseWriter, req *http.Request) {
 	response.WriteHeader(http.StatusOK)
 	response.Write(jsonResponse)
 }
+
+
+// Get Function to get a proxy by name
+func (s *Server) Delete(response http.ResponseWriter, req *http.Request) {
+	log.Printf("DELETE %s\n", req.URL.Path)
+  vars := mux.Vars(req)
+  name := vars["name"]
+
+  s.Proxies.Delete(name)
+
+	response.WriteHeader(http.StatusNoContent)
+}
+

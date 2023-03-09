@@ -14,10 +14,10 @@ func main() {
 
   print("Server is start!!")
 	route.HandleFunc("/proxies", server.GetAll).Methods("GET")
-	route.HandleFunc("/proxies/<id>", server.Get).Methods("GET")
-	route.HandleFunc("/proxies", server.Create).Methods("POST")
-	route.HandleFunc("/proxies", server.Update).Methods("PUT")
-	route.HandleFunc("/proxies", server.Delete).Methods("DELETE")
+	route.HandleFunc("/proxies/{name}", server.Get).Methods("GET")
+	route.HandleFunc("/proxies", server.Write).Methods("POST")
+	route.HandleFunc("/proxies", server.Write).Methods("PUT")
+	route.HandleFunc("/proxies/{name}", server.Delete).Methods("DELETE")
 
 	err := http.ListenAndServe("localhost:8000", route)
 	if err != nil {
