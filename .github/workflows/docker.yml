@@ -1,10 +1,6 @@
 name: Publish Docker image
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: [push]
 
 jobs:
   push_to_registry:
@@ -13,32 +9,32 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-        
-      - name: Is secrets here?
-        run: |
-          echo "$USERNAME"
-          echo "HERE IS USERNAME $USERNAME"
-          echo {{secrets.DOCKER_USERNAME}}
-        shell: bash
-        env:
-          USERNAME: ${{secrets.DOCKER_USERNAME}}
-      
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: justmark0/proxymanager
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+          password: ${{ secrets.DOCKER_KEY }}
+
+      - name: Set up Docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
         with:
           context: .
+          file: ./Dockerfile
+          builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/proxymanager:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/proxymanager:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/proxymanager:buildcache,mode=max
