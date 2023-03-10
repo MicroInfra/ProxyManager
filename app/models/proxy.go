@@ -32,17 +32,16 @@ func (p *Proxies) Set(name string, proxy Proxy) error {
 	p.Proxies[name] = proxy
   var cmd *exec.Cmd 
   if proxy.FilterFile != "" {
-    cmd = exec.Command("mitmdump", "--set", "block_global=false", "--mode", fmt.Sprintf("reverse:%s", proxy.ServiceUrl), "-s", proxy.FilterFile, "&")
-
+    cmd = exec.Command("mitmdump", "--set", "block_global=false", "--mode", fmt.Sprintf("reverse:%s", proxy.ServiceUrl), "-s", proxy.FilterFile, "--listen-port", fmt.Sprint(proxy.ListenPort), "&")
   } else {
-    cmd = exec.Command("mitmdump", "--set", "block_global=false", "--mode", fmt.Sprintf("reverse:%s", proxy.ServiceUrl), "&")
-
+    cmd = exec.Command("mitmdump", "--set", "block_global=false", "--mode", fmt.Sprintf("reverse:%s", proxy.ServiceUrl), "--listen-port", fmt.Sprint(proxy.ListenPort), "&")
   }
 
   if err := cmd.Start(); err != nil {
     return fmt.Errorf("Error starting command: %s\n", err)
   }
   proxy.Pid = cmd.Process.Pid
+  fmt.Println("Proxy PID is ", proxy.Pid)
   p.Proxies[name] = proxy
 
   return nil

@@ -56,10 +56,11 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
   log.Printf("Write proxy URL: %s\n", req.URL.Path)
 
   file, handler, err := req.FormFile("filterFile") // Get the file from the form data
-  defer file.Close()
 
   filename := ""
   if err == nil {
+    defer file.Close()
+    filename = fmt.Sprintf("./rules/%s", handler.Filename)
     f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
       if err != nil {
         fmt.Println("Could not save file", err)
@@ -69,8 +70,6 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
       defer f.Close()
 
       io.Copy(f, file)
-
-    fmt.Println("File name: %v\n", handler.Filename) // Write the file name to the response
   }
 
   port, err := strconv.Atoi(req.FormValue("listenPort"))
