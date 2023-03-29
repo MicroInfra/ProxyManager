@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+  "github.com/gorilla/handlers"
   "main/controllers"
 	"main/models"
 	"net/http"
@@ -12,7 +13,11 @@ func main() {
 	route := mux.NewRouter()
 	server := controllers.Server{Proxies: models.NewAllProxies()}
 
-  print("Server is start!!")
+  headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+  methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"})
+  origins := handlers.AllowedOrigins([]string{"*"})
+  route.Use(handlers.CORS(headers, methods, origins))
+  
 	route.HandleFunc("/proxies", server.GetAll).Methods("GET")
 	route.HandleFunc("/proxies/{name}", server.Get).Methods("GET")
 	route.HandleFunc("/proxies", server.Write).Methods("POST")
