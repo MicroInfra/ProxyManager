@@ -13,8 +13,16 @@ type Proxy struct {
 	ServiceUrl  string `json:"serviceUrl"`  // The URL of the service in Docker network. Must end with /
 	ListenPort  int    `json:"listenPort"`  // The port to listen on
 	ProxyType   string `json:"proxyType"`   // The type of proxy to use. [http, tcp]
-	FilterFile  string `json:"filterFile"`  // The file containing the filter rules
+	FilterFile  string `json:"filterFile"`  // The file containing the filter rules. Path of file in future
 	Pid         int
+}
+
+type ProxyRulesPlainText struct {
+	ServiceName string `json:"serviceName"` // Unique name of the service
+	ServiceUrl  string `json:"serviceUrl"`  // The URL of the service in Docker network. Must end with /
+	ListenPort  int    `json:"listenPort"`  // The port to listen on
+	ProxyType   string `json:"proxyType"`   // The type of proxy to use. [http, tcp]
+	Rules       string `json:"rules"`       // The code of rules
 }
 
 type Proxies struct {

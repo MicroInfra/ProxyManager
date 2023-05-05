@@ -55,11 +55,11 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
 
 	file, handler, err := req.FormFile("filterFile") // Get the file from the form data
 
-	filename := ""
+	filterRules := ""
 	if err == nil {
 		defer file.Close()
-		filename = fmt.Sprintf("./rules/%s", handler.Filename)
-		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+		filterRules = fmt.Sprintf("./rules/%s", handler.Filename)
+		f, err := os.OpenFile(filterRules, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			fmt.Println("Could not save file", err)
 			response.WriteHeader(http.StatusBadRequest)
@@ -77,12 +77,17 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	proxy := models.Proxy{ServiceName: req.FormValue("serviceName"), ServiceUrl: req.FormValue("serviceUrl"), ListenPort: port, ProxyType: req.FormValue("proxyType"), FilterFile: filename}
+	proxy := models.Proxy{
+		ServiceName: req.FormValue("serviceName"),
+		ServiceUrl:  req.FormValue("serviceUrl"),
+		ListenPort:  port,
+		ProxyType:   req.FormValue("proxyType"),
+		FilterFile:  filterRules}
 
 	// Add the proxy to the list of proxies
 	err = s.Proxies.Set(proxy.ServiceName, proxy)
 	if err != nil {
-		log.Printf("Could not create proxy")
+		log.Printf("Could not create proxy: %e", err)
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
