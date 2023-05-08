@@ -12,6 +12,21 @@ import (
 	"os"
 )
 
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		checkAuth := os.Getenv("CHECK_AUTH") == "true"
+		if checkAuth {
+			authToken := os.Getenv("AUTH_TOKEN")
+			password := r.Header.Get("Authorization")
+			if password != authToken {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	route := mux.NewRouter()
 	server := controllers.Server{Proxies: models.NewAllProxies()}
@@ -21,6 +36,7 @@ func main() {
 		log.Printf("error occured while loading proxies from file: %e", err)
 	}
 
+	route.Use(authMiddleware)
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS"})
 	origins := handlers.AllowedOrigins([]string{"*"})
@@ -33,7 +49,7 @@ func main() {
 	route.HandleFunc("/proxies/{name}", server.Delete).Methods("DELETE")
 	route.HandleFunc("/proxies/{name}", server.Options).Methods("OPTIONS")
 
-	err = http.ListenAndServe("localhost:8000", route)
+	err = http.ListenAndServe("0.0.0.0:8000", route)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -4,6 +4,6 @@
     "serviceUrl":  "http://localhost:8000",
     "listenPort":  5000,
     "proxyType":  "http",
-    "rules":  "a = 10"
+    "rules":  "a = 10 # rules in python goes here"
   }
 ]
