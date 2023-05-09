@@ -4,3 +4,9 @@ services:
   proxy-manager:
     build: .
     network_mode: "host"
+    volumes:
+      - ./mlemtmp/settings.json:/app/settings.json
+    environment:
+      CHECK_AUTH: false
+      AUTH_TOKEN: "auth_token" # when check auth set requires header Authorization with this value to all requests
+

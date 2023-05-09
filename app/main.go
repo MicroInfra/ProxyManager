@@ -57,7 +57,7 @@ func main() {
 
 func loadProxiesFromFile(p *models.Proxies) error {
 	// Open the settings.example.json file
-	fileContent, err := os.ReadFile("./settings.example.json")
+	fileContent, err := os.ReadFile("/app/settings.json")
 	if err != nil {
 		return err
 	}

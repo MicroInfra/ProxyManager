@@ -51,3 +51,11 @@ Delete proxy by its name, also it disables it.
 curl --location --request DELETE 'http://localhost:8000/proxies/service_name_example'
 ```
 
+### Auth required:
+To enable auth modify docker-compose.yml. After this requires header `Authorization` for all requests.
+
+```shell
+curl -X GET \
+  -H "Authorization: mlem" \
+  http://localhost:8000/proxies
+```
