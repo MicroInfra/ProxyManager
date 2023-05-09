@@ -49,10 +49,12 @@ func main() {
 	route.HandleFunc("/proxies/{name}", server.Delete).Methods("DELETE")
 	route.HandleFunc("/proxies/{name}", server.Options).Methods("OPTIONS")
 
-	err = http.ListenAndServe("0.0.0.0:8000", route)
+	addr := "0.0.0.0:8002"
+	err = http.ListenAndServe(addr, route)
 	if err != nil {
 		fmt.Println(err)
 	}
+	log.Printf("Serving on: %s", addr)
 }
 
 func loadProxiesFromFile(p *models.Proxies) error {

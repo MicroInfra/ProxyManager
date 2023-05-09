@@ -4,3 +4,4 @@ __pycache__
 app/rules/*
 !app/rules/dir_save_file
 .idea
+tmp/

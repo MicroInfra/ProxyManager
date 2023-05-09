@@ -4,14 +4,14 @@ from mitmproxy.addons import core
 from mitmproxy.http import HTTPFlow
 from threading import Thread
 import time
+from urllib.parse import urlparse
 import re
 from os import getenv
 
 
-SERVICE_NAME = getenv('SERVICE_NAME', 'default_service_name_')
-AUTH_TOKEN = 'YOUR_PROMETHEUS_TOKEN'
-FLAG_PATTERN = re.compile(r'[A-Za-z0-9]{31}=')
-EXPORTER_URL = getenv('EXPORTER_URL', 'http://localhost:8080/metrics')
+SERVICE_NAME = '{{service_name}}'
+AUTH_TOKEN = '{{exporter_auth_token}}'
+EXPORTER_URL = '{{exporter_url}}'
 
 
 def filter_rules(flow: HTTPFlow):
@@ -23,7 +23,7 @@ def filter_rules(flow: HTTPFlow):
     #         flow.request.pretty_url.endswith("/something"):
     #     tmp = flow.response.text.replace('nginx', 'mark_was_here')
     #     metrics.append(format_metric('filtered_request_rule1', 1, 'sum'))
-    #     flow.response.text = tmp # or evem  = 'fuck you'
+    #     flow.response.text = tmp # or even  = 'some text'
     #     flow.response.status_code = 418
 
     return metrics
@@ -49,12 +49,13 @@ def send_metrics(flow: HTTPFlow, start_time, specific_metrics: list or None = No
     metrics.append(format_metric('request_count', 1, 'counter'))
     request_timing = (flow.request.timestamp_end - flow.request.timestamp_start) * 1000
     response_timing = (flow.response.timestamp_end - flow.response.timestamp_start) * 1000
-    metrics.append(format_metric('request_time_ms', request_timing))
-    metrics.append(format_metric('response_time_ms', response_timing))
+    metrics.append(format_metric('request_latency_ms', request_timing))
+    metrics.append(format_metric('response_latency_ms', response_timing))
 
     metrics.append(format_metric('response_code', 1, 'counter', {"code": flow.response.status_code}))
 
-    # TODO add request endpoint
+    path = urlparse(flow.request.pretty_url).path
+    metrics.append(format_metric('url_rps', 1, 'counter', {"url": path}))
 
     metrics.append(format_metric('response_size', len(flow.response.get_text()), 'sum'))
     metrics.append(format_metric('request_size', len(flow.request.get_text()), 'sum'))
@@ -62,15 +63,9 @@ def send_metrics(flow: HTTPFlow, start_time, specific_metrics: list or None = No
     # Maybe add request ip. But need to do some modifications in exporter
 
     proxy_ms = (time.time() - start_time) * 1000
-    metrics.append(format_metric('proxy_time_ms', proxy_ms))
+    metrics.append(format_metric('proxy_latency_ms', proxy_ms))
 
-    for _ in range(3): # retries
-        try:
-            res = requests.post(EXPORTER_URL, json={'metrics': metrics}, headers={"Authorization": AUTH_TOKEN}, timeout=1)
-        except Error as _:
-            continue
-        if res != None:
-            break
+    requests.post(EXPORTER_URL, json={'metrics': metrics}, headers={"Authorization": AUTH_TOKEN}, timeout=1)
 
 
 def format_metric(name, value, type='gauge', labels=None):
