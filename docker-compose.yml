@@ -7,6 +7,7 @@ services:
     volumes:
       - ./settings.json:/app/settings.json
     environment:
-      CHECK_AUTH: false
+      CHECK_AUTH: "true"
       AUTH_TOKEN: "auth_token" # when check auth set requires header Authorization with this value to all requests
+      PORT: "25600"
 

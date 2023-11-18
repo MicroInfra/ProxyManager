@@ -49,12 +49,16 @@ func main() {
 	route.HandleFunc("/proxies/{name}", server.Delete).Methods("DELETE")
 	route.HandleFunc("/proxies/{name}", server.Options).Methods("OPTIONS")
 
-	addr := "0.0.0.0:8002"
+	port := "25600"
+	if os.Getenv("PORT") != "" {
+		port = os.Getenv("PORT")
+	}
+	addr := "0.0.0.0:" + port
+	log.Printf("Serving on: %s", addr)
 	err = http.ListenAndServe(addr, route)
 	if err != nil {
 		fmt.Println(err)
 	}
-	log.Printf("Serving on: %s", addr)
 }
 
 func loadProxiesFromFile(p *models.Proxies) error {
@@ -100,3 +104,4 @@ func loadProxiesFromFile(p *models.Proxies) error {
 
 	return nil
 }
+
