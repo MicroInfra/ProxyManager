@@ -64,9 +64,13 @@ func (p *Proxies) Get(name string) Proxy {
 }
 
 func (p *Proxies) Delete(name string) {
+	pid := p.Proxies[name].Pid
+	if pid == 0 {
+		return
+	}
 	defer p.Unlock()
 	p.Lock()
-	if err := syscall.Kill(p.Proxies[name].Pid, syscall.SIGHUP); err != nil {
+	if err := syscall.Kill(pid, syscall.SIGHUP); err != nil {
 		fmt.Printf("Error killing command: %s\n", err)
 	}
 

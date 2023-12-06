@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"main/models"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,7 +29,10 @@ func (s *Server) GetAll(response http.ResponseWriter, req *http.Request) {
 
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
-	response.Write(jsonResponse)
+	_, err := response.Write(jsonResponse)
+	if err != nil {
+		fmt.Println("unable to write data to response ", err)
+	}
 }
 
 // Get Function to get a proxy by name
@@ -46,7 +50,10 @@ func (s *Server) Get(response http.ResponseWriter, req *http.Request) {
 
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
-	response.Write(jsonResponse)
+	_, err := response.Write(jsonResponse)
+	if err != nil {
+		fmt.Println("unable to write data to response ", err)
+	}
 }
 
 // Write function creates or updates a proxy from a json request
@@ -57,7 +64,12 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
 
 	filterRules := ""
 	if err == nil {
-		defer file.Close()
+		defer func(file multipart.File) {
+			err := file.Close()
+			if err != nil {
+				fmt.Println("could not close file ", err)
+			}
+		}(file)
 		filterRules = fmt.Sprintf("./rules/%s", handler.Filename)
 		f, err := os.OpenFile(filterRules, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
@@ -65,9 +77,17 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
 			response.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		defer f.Close()
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+				fmt.Println("could not close file ", err)
+			}
+		}(f)
 
-		io.Copy(f, file)
+		_, err = io.Copy(f, file)
+		if err != nil {
+			fmt.Println("could not copy to file ", err)
+		}
 	}
 
 	port, err := strconv.Atoi(req.FormValue("listenPort"))
@@ -84,6 +104,9 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
 		ProxyType:   req.FormValue("proxyType"),
 		FilterFile:  filterRules}
 
+	if req.Method == "PUT" {
+		s.Proxies.Delete(proxy.ServiceName)
+	}
 	// Add the proxy to the list of proxies
 	err = s.Proxies.Set(proxy.ServiceName, proxy)
 	if err != nil {
@@ -102,7 +125,10 @@ func (s *Server) Write(response http.ResponseWriter, req *http.Request) {
 
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
-	response.Write(jsonResponse)
+	_, err = response.Write(jsonResponse)
+	if err != nil {
+		fmt.Println("unable to write data to response ", err)
+	}
 }
 
 // Delete proxy by name
